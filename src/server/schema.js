@@ -2,59 +2,48 @@ import Schema from 'graph.ql';
 var schema = Schema(`
   enum Test { ONE, TWO }
 
-
-  type TodoInput {
-    text: String
-  }
-  
-  # Todo type
-  type Todo {
-    # Todo id
-    id: String
-    # Todo text
-    text: String
-    owner: User
-    # Todo creation date
-    createdAt: String
-  }
-  
-  type User {
-    id: String
+  type Browser {
     name: String
-    todos(count: Int): [Todo]
-    createdAt: String
+    supportedOS: [OS]
+    versions: [BrowserVersion]
+    traffic: Traffic
   }
 
+  type OS {
+    name: String
+    browsers: [Browser]
+    versions: [OSVersion]
+    traffic: Traffic
+  }
+  
+  type OSVersion {
+    versionNumber: String
+    traffic: Traffic
+  }
+  
+  type BrowserVersion {
+    versionNumber: String
+    traffic: Traffic
+  }
+  
+  type Traffic {
+    visits: Int
+  }
+  
   type Query {
-    # Fetch the film by id
-    viewer: User
-    test: Test
-  }
-
-  type Mutation {
-    createTodo(input: String): Todo
+    browsers(sortBy: String, sortOrder: Boolean, limit: Int): [Browser]
   }
 `, {
-  Todo: {
-    owner(root, args, { connection }) {
-      return connection.findUser();
-    }
-  },
-  User: {
-    todos(root, { count }, { connection }) {
-      return connection.findTodo(count);
-    }
-  },
   Query: {
-    viewer(root, { viewer }, { connection }) {
-      return connection.findUser(viewer);
+    browsers(root, { sortBy, sortOrder, limit }, { connection }) {
+      return connection.allBrowsers(sortBy, sortOrder, limit);
     }
   },
-  Mutation: {
-    createTodo(root, { input }, { connection }) {
-      return connection.createTodo(input);
+  Browser: {
+    versions(root, options, { connection }) {
+      return connection.versionsForBrowser(root.name);
     }
-  }
+  },
 });
 
 export default schema.schema;
