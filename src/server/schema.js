@@ -1,4 +1,5 @@
 import Schema from 'graph.ql';
+import dbConnection from './dbConnection.js';
 var schema = Schema(`
   enum Test { ONE, TWO }
 
@@ -33,17 +34,6 @@ var schema = Schema(`
   type Query {
     browsers(sortBy: String, sortOrder: Boolean, limit: Int): [Browser]
   }
-`, {
-  Query: {
-    browsers(root, { sortBy, sortOrder, limit }, { connection }) {
-      return connection.allBrowsers(sortBy, sortOrder, limit);
-    }
-  },
-  Browser: {
-    versions(root, options, { connection }) {
-      return connection.versionsForBrowser(root.name);
-    }
-  },
-});
+`, dbConnection);
 
 export default schema.schema;

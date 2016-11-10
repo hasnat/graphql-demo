@@ -2,12 +2,12 @@ import expect from 'expect';
 import TestUtils from 'adrenaline/lib/test';
 
 import schema from '../../../server/schema';
-import TodoApp from '../TodoApp';
+import Browser from '../Browser';
 
 expect.extend(TestUtils.expect);
 
 describe('Queries regression', () => {
-  it('for TodoApp', () => {
-    expect(TodoApp).toBeValidAgainst(schema);
+  it('for Browser', () => {
+    expect(Browser).toBeValidAgainst(schema);
   });
 });

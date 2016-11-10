@@ -1,69 +1,78 @@
 /* @flow */
-import loki from 'lokijs';
-const db = new loki('./db/traffic_data.json');
-let dbConnection = {};
-let BrowserDbMap = (obj) => ({name: obj.browser_name, traffic: {visits: obj.traffic}});
-
-let OSDbMap = (obj) => ({name: obj.browser_name});
-let BrowserVersionMap = (obj) => ({versionNumber: obj.browser_version, traffic: {visits: obj.traffic}});
-let OSVersionDbMap = (obj) => ({name: obj.browser_name});
-let TrafficDbMap = (obj) => ({visits: obj.traffic});
-
-
-
-dbConnection.trafficCollection = new Promise((resolve) => {
-  db.loadDatabase({}, () => {
-    resolve(db.getCollection('traffic_collection'));
-  });
-})
-dbConnection.allBrowsers = async (sortBy = 'traffic', sortOrder = true, limit = 20) => {
-  return (await dbConnection.trafficCollection).mapReduce(BrowserDbMap, (objs) => {
-    let dist = [];
-    let distCheck = [];
-    objs.forEach((elem) => {
-      if (distCheck.indexOf(elem.name) === -1) {
-        dist.push(elem);
-        distCheck.push(elem.name);
-      }
-    });
-    return dist;
-  });
+var sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database('./db/traffic.db');
+function addPrentQueryInfo(row) {
+  row._parentTypeInfo = this._parentTypeInfo ? this._parentTypeInfo : {};
+  row._parentTypeInfo[Object.keys(this._parentTypeInfo).length + ''] = {root: this.root, type: this.type};
+  return row;
 }
-dbConnection.versionsForBrowser = async (browserName) => {
-  // var findBy = {'$and': [{ 'browser_name': browserName }]};
-  return (await dbConnection.trafficCollection).mapReduce((obj) => obj, (objs) => {
-    let dist = [];
-    let distCheck = [];
-    objs.forEach((elem) => {
-      if (elem.browser_name == browserName && distCheck.indexOf(elem.browser_version) === -1) {
-        dist.push(elem);
-        distCheck.push(elem.browser_version);
-      }
-    });
-    return dist;
-  }).map(BrowserVersionMap);
-}
-dbConnection.findBrowserByName = (name) => {
-  var findBy = {'$and': [{ 'name': name }]};
-  return dbConnection.trafficCollection.chain().find(findBy).limit(1).data();
-}
+let dbConnection = {
+  Query: {
+    browsers: (root, { sortBy, sortOrder, limit }, { connection }) => {
+      return new Promise(resolve => db.all('SELECT distinct browser_name as name FROM traffic', (err, rows) => {
+        resolve(rows.map(addPrentQueryInfo.bind({root, type: 'Query'})));
+      }))
+    }
+  },
+  Browser: {
+    //name:
+    supportedOS: (root, options, { connection }) => {
+      return new Promise(resolve => db.all('SELECT distinct os_name as name FROM traffic where browser_name = ?', [root.name], (err, rows) => {
+        resolve(rows.map(addPrentQueryInfo.bind({root, type: 'Browser'})));
+      }))
+    },
+    versions: (root, options, { connection }) => {
+      return new Promise(resolve => db.all('SELECT distinct browser_version as versionNumber FROM traffic where browser_name = ?', [root.name], (err, rows) => {
+        resolve(rows.map(addPrentQueryInfo.bind({root, type: 'Browser'})));
+      }))
+    },
+    traffic: (root, options, { connection }) => {
+      return new Promise(resolve => db.all('SELECT sum(traffic) as visits FROM traffic where browser_name = ?', [root.name], (err, rows) => {
+        resolve(rows[0]);
+      }))
+    }
+  },
 
-dbConnection.findTodo = (count) => {
-  return count ? data.todos.slice(0, count) : data.todos;
-}
+  OS: {
+    //name:
+    browsers: (root, options, { connection }) => {
+      return new Promise(resolve => db.all('SELECT distinct browser_name as name FROM traffic where os_name = ?', [root.name], (err, rows) => {
+        resolve(rows.map(addPrentQueryInfo.bind({root, type: 'OS'})));
+      }))
+    },
+    versions: (root, options, { connection }) => {
+      return new Promise(resolve => db.all('SELECT distinct os_version as versionNumber FROM traffic where os_name = ?', [root.name], (err, rows) => {
+        resolve(rows.map(addPrentQueryInfo.bind({root, type: 'OS'})));
+      }))
+    },
+    traffic: (root, options, { connection }) => {
+      console.log('-----');
+      console.log(root);
+      console.log('-----');
+      return new Promise(resolve => db.all('SELECT sum(traffic) as visits FROM traffic where os_name = ?', [root.name], (err, rows) => {
+        resolve(rows[0]);
+      }))
+    }
+  },
 
-dbConnection.createTodo = (text) => {
-  const todo = {
-    id: 't-' + idx++,
-    text: text,
-    owner: 'u-1',
-    createdAt: (new Date()).toString(),
-  };
-  data.todos.push(todo);
-  return todo;
-}
+  OSVersion: {
+    //versionNumber:
+    traffic: (root, options, { connection }) => {
+      return new Promise(resolve => db.all('SELECT sum(traffic) as visits FROM traffic where os_version = ?', [root.name], (err, rows) => {
+        resolve(rows[0]);
+      }))
+    }
+  },
 
-dbConnection.findUser = () => {
-  return data.users[0];
-}
+  BrowserVersion: {
+    // versionNumber: String
+    traffic: (root, options, { connection }) => {
+      console.log(root);
+      return new Promise(resolve => db.all('SELECT sum traffic FROM traffic where browser_name = ?', [root.name], (err, rows) => {
+        resolve(rows.map(addPrentQueryInfo.bind({root, type: 'BrowserVersion'})));
+      }))
+    }
+  }
+};
+
 export default dbConnection;
