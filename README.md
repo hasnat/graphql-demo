@@ -20,3 +20,6 @@ example GQL query
   }
 }
 ```
+
+Slides
+`https://slides.com/hasnatullah/graphql`
