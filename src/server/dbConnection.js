@@ -2,6 +2,7 @@
 var sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('./db/traffic.db');
 function addPrentQueryInfo(row) {
+  return row;
   row._parentTypeInfo = this._parentTypeInfo ? this._parentTypeInfo : {};
   row._parentTypeInfo[Object.keys(this._parentTypeInfo).length + ''] = {root: this.root, type: this.type};
   return row;
@@ -46,9 +47,6 @@ let dbConnection = {
       }))
     },
     traffic: (root, options, { connection }) => {
-      console.log('-----');
-      console.log(root);
-      console.log('-----');
       return new Promise(resolve => db.all('SELECT sum(traffic) as visits FROM traffic where os_name = ?', [root.name], (err, rows) => {
         resolve(rows[0]);
       }))
