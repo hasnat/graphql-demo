@@ -38,7 +38,7 @@
     "chokidar": "^1.6.1",
     "expect": "^1.13.4",
     "mocha": "^2.3.4",
-    "webpack": "^1.12.14",
+    "webpack": "^4.36.1",
     "webpack-dev-server": "^1.11.0"
   }
 }
