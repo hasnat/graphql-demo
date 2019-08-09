@@ -39,6 +39,6 @@
     "expect": "^1.13.4",
     "mocha": "^2.3.4",
     "webpack": "^1.12.14",
-    "webpack-dev-server": "^1.11.0"
+    "webpack-dev-server": "^3.8.0"
   }
 }
